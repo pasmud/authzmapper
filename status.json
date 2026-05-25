@@ -1,0 +1,11 @@
+{
+  "project": "authzmapper",
+  "phase": "research",
+  "frontend_port": null,
+  "backend_port": null,
+  "tests": "not_started",
+  "docker": "not_started",
+  "github_url": "",
+  "blockers": [],
+  "last_updated": "2026-05-26T00:00:00Z"
+}

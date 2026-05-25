@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Spec {
+  id         Int          @id @default(autoincrement())
+  name       String
+  version    String
+  raw        String
+  format     String
+  sourceUrl  String?      @map("source_url")
+  endpoints  Endpoint[]
+  authSchemes AuthScheme[] @map("auth_schemes")
+  scans      Scan[]
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  @@map("specs")
+}
+
+model AuthScheme {
+  id       Int     @id @default(autoincrement())
+  specId   Int     @map("spec_id")
+  type     String
+  name     String
+  inHeader String? @map("in_header")
+  spec     Spec    @relation(fields: [specId], references: [id])
+
+  @@map("auth_schemes")
+}
+
+model Endpoint {
+  id             Int      @id @default(autoincrement())
+  specId         Int      @map("spec_id")
+  path           String
+  method         String
+  summary        String?
+  operationId    String?  @map("operation_id")
+  authRequired   Boolean  @default(false) @map("auth_required")
+  objectIdParam  String?  @map("object_id_param")
+  spec           Spec     @relation(fields: [specId], references: [id])
+  scanEndpoints  ScanEndpoint[]
+  scanResults    ScanResult[]
+
+  @@map("endpoints")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  tokens      Token[]
+  scanRoles   ScanRole[]
+  scanResults ScanResult[]
+
+  @@map("roles")
+}
+
+model Token {
+  id         Int    @id @default(autoincrement())
+  roleId     Int    @map("role_id")
+  type       String
+  value      String
+  headerName String? @map("header_name")
+  role       Role   @relation(fields: [roleId], references: [id])
+
+  @@map("tokens")
+}
+
+model Scan {
+  id          Int           @id @default(autoincrement())
+  specId      Int           @map("spec_id")
+  name        String
+  status      String        @default("pending")
+  targetUrl   String        @map("target_url")
+  totalTests  Int           @default(0) @map("total_tests")
+  passedTests Int           @default(0) @map("passed_tests")
+  failedTests Int           @default(0) @map("failed_tests")
+  startedAt   DateTime?     @map("started_at")
+  completedAt DateTime?     @map("completed_at")
+  spec        Spec          @relation(fields: [specId], references: [id])
+  scanRoles   ScanRole[]
+  scanEndpoints ScanEndpoint[]
+  scanResults ScanResult[]
+  findings    ScanFinding[]
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  @@map("scans")
+}
+
+model ScanRole {
+  id     Int  @id @default(autoincrement())
+  scanId Int  @map("scan_id")
+  roleId Int  @map("role_id")
+  scan   Scan @relation(fields: [scanId], references: [id])
+  role   Role @relation(fields: [roleId], references: [id])
+
+  @@map("scan_roles")
+}
+
+model ScanEndpoint {
+  id         Int      @id @default(autoincrement())
+  scanId     Int      @map("scan_id")
+  endpointId Int      @map("endpoint_id")
+  scan       Scan     @relation(fields: [scanId], references: [id])
+  endpoint   Endpoint @relation(fields: [endpointId], references: [id])
+
+  @@map("scan_endpoints")
+}
+
+model ScanResult {
+  id              Int      @id @default(autoincrement())
+  scanId          Int      @map("scan_id")
+  endpointId      Int      @map("endpoint_id")
+  roleId          Int      @map("role_id")
+  method          String
+  path            String
+  requestUrl      String   @map("request_url")
+  requestHeaders  String   @map("request_headers")
+  requestBody     String?  @map("request_body")
+  responseStatus  Int      @map("response_status")
+  responseHeaders String   @map("response_headers")
+  responseBody    String?  @map("response_body")
+  expectedStatus  Int      @map("expected_status")
+  isFinding       Boolean  @default(false) @map("is_finding")
+  findingType     String?  @map("finding_type")
+  findingDesc     String?  @map("finding_desc")
+  durationMs      Int      @map("duration_ms")
+  scan            Scan     @relation(fields: [scanId], references: [id])
+  endpoint        Endpoint @relation(fields: [endpointId], references: [id])
+  role            Role     @relation(fields: [roleId], references: [id])
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("scan_results")
+}
+
+model ScanFinding {
+  id          Int      @id @default(autoincrement())
+  scanId      Int      @map("scan_id")
+  resultId    Int      @map("result_id")
+  type        String
+  severity    String
+  endpoint    String
+  description String
+  remediation String
+  isFixed     Boolean  @default(false) @map("is_fixed")
+  scan        Scan     @relation(fields: [scanId], references: [id])
+  result      ScanResult @relation(fields: [resultId], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("scan_findings")
+}

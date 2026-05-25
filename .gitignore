@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+.env
+*.db
+*.db-journal
+data/
+.vite/
+server/dist/
+coverage/
+playwright-report/
+test-results/
+drizzle.config.ts
+demospec.json
+*.tsbuildinfo
